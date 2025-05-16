@@ -15,6 +15,10 @@
 
     <p id="status" class="text-gray-600"></p>
 
+    <a href="{{ url('/attendance') }}" class="mt-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow">
+    ← Back
+    </a>
+
     <audio id="tickSound" src="{{ asset('sounds/tick.mp3') }}"></audio>
 
     <script>
