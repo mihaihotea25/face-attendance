@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Start Attendance</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+@extends('layouts.app')
+
+@section('title', 'Start Attendance')
+
+@section('content')
+<div class="flex flex-col items-center justify-center min-h-screen">
 
     <h1 class="text-3xl font-bold mb-6">📸 Start Attendance</h1>
 
@@ -20,82 +18,79 @@
     <audio id="tickSound" src="{{ asset('sounds/tick.mp3') }}"></audio>
 
     <script>
-    const video = document.getElementById('video');
-    const startButton = document.getElementById('startButton');
-    const statusText = document.getElementById('status');
-    const tickSound = document.getElementById('tickSound');
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const statusText = document.getElementById('status');
+        const tickSound = document.getElementById('tickSound');
 
-    let stream = null;
-    let isCameraRunning = false;
+        let stream = null;
+        let isCameraRunning = false;
 
-    let intervalId;
+        let intervalId;
 
-    startButton.addEventListener('click', async () => {
-        if (!isCameraRunning) {
-            // Start camera
+        startButton.addEventListener('click', async () => {
+            if (!isCameraRunning) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+
+                    intervalId = setInterval(captureAndSendFrame, 3000);
+
+                    startButton.innerText = 'Stop Camera';
+                    isCameraRunning = true;
+                    statusText.innerText = '📸 Camera started.';
+
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    statusText.innerText = '❌ Could not access camera.';
+                }
+            } else {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+
+                clearInterval(intervalId);
+
+                startButton.innerText = 'Start Camera';
+                isCameraRunning = false;
+                statusText.innerText = '⏹️ Camera stopped.';
+            }
+        });
+
+        async function captureAndSendFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+
+            const formData = new FormData();
+            formData.append('file', blob, 'frame.jpg');
+
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
+                const response = await fetch('{{ route('attendance.recognize') }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
 
-                intervalId = setInterval(captureAndSendFrame, 3000);
-
-                startButton.innerText = 'Stop Camera';
-                isCameraRunning = true;
-                statusText.innerText = '📸 Camera started.';
+                const result = await response.json();
+                statusText.innerText = result.message;
+                if (result.marked === true) {
+                    tickSound.play();
+                }
 
             } catch (error) {
-                console.error('Error accessing camera:', error);
-                statusText.innerText = '❌ Could not access camera.';
+                console.error('Error sending frame:', error);
+                statusText.innerText = '❌ Error: ' + error.message;
             }
-        } else {
-            // Stop camera
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-            }
-
-            clearInterval(intervalId);
-
-            startButton.innerText = 'Start Camera';
-            isCameraRunning = false;
-            statusText.innerText = '⏹️ Camera stopped.';
         }
-    });
+    </script>
 
-    async function captureAndSendFrame() {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-
-        const formData = new FormData();
-        formData.append('file', blob, 'frame.jpg');
-
-        try {
-            const response = await fetch('{{ route('attendance.recognize') }}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            });
-
-            const result = await response.json();
-            statusText.innerText = result.message;
-            if (result.marked === true) {
-                tickSound.play();
-            }
-
-        } catch (error) {
-            console.error('Error sending frame:', error);
-            statusText.innerText = '❌ Error: ' + error.message;
-        }
-    }
-</script>
-
-
-</body>
-</html>
+</div>
+@endsection

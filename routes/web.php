@@ -5,8 +5,12 @@ use App\Http\Controllers\AttendanceController;
 
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('attendance');
 });
+
+Route::get('/attendance', function () {
+    return view('attendance.index');
+})->name('attendance.index');
 
 Route::get('/attendance/start', [AttendanceController::class, 'start'])->name('attendance.start');
 
