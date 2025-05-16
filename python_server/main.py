@@ -51,7 +51,13 @@ async def predict(file: UploadFile = File(...)):
 
     with torch.no_grad():
         outputs = model(input_tensor)
-        _, preds = torch.max(outputs, 1)
+        probabilities = torch.nn.functional.softmax(outputs, dim=1)
+        predicted_index = torch.argmax(probabilities, dim=1)
+        confidence_score = float(probabilities[0][predicted_index])
 
-    student_id = CLASS_NAMES[preds[0]]
-    return {"student": student_id}
+    student_id = CLASS_NAMES[predicted_index]
+
+    return {
+        "student": student_id,
+        "confidence": confidence_score
+    }
