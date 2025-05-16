@@ -12,10 +12,14 @@
     <nav class="bg-white shadow p-4 flex justify-between items-center">
         <a href="{{ url('/attendance') }}" class="text-xl font-bold text-blue-600 hover:text-blue-800">I am present!</a>
 
-        <div>
-            Login
-            
-        </div>
+        @auth
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="text-white bg-red-600 px-4 py-2 rounded hover:bg-red-700">
+                Logout
+            </button>
+        </form>
+        @endauth
     </nav>
 
     <!-- Page Content -->
