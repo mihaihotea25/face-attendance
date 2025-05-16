@@ -17,10 +17,13 @@
 
     <p id="status" class="text-gray-600"></p>
 
+    <audio id="tickSound" src="{{ asset('sounds/tick.mp3') }}"></audio>
+
     <script>
     const video = document.getElementById('video');
     const startButton = document.getElementById('startButton');
     const statusText = document.getElementById('status');
+    const tickSound = document.getElementById('tickSound');
 
     let stream = null;
     let isCameraRunning = false;
@@ -82,6 +85,9 @@
 
             const result = await response.json();
             statusText.innerText = result.message;
+            if (result.marked === true) {
+                tickSound.play();
+            }
 
         } catch (error) {
             console.error('Error sending frame:', error);
