@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Student;
 use App\Models\Attendance;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -81,5 +82,70 @@ class AttendanceController extends Controller
         return response()->json(['error' => 'No file uploaded', 'marked' => false], 400);
     }
 
+    public function showReports(Request $request)
+    {
+        $date = $request->input('date');
+        $start = $request->input('start_time');
+        $end = $request->input('end_time');
+
+        $query = DB::table('attendances')
+            ->join('students', 'attendances.student_id', '=', 'students.id')
+            ->select('students.name', 'attendances.date', 'attendances.created_at')
+            ->where('attendances.user_id', auth()->id()) 
+            ->orderBy('attendances.created_at', 'desc');
+
+        if ($date) {
+            $query->whereDate('attendances.created_at', $date);
+        }
+
+        if ($start && $end) {
+            $query->whereTime('attendances.created_at', '>=', $start)
+                ->whereTime('attendances.created_at', '<=', $end);
+        }
+
+        $records = $query->get();
+
+        return view('attendance.reports', compact('records', 'date', 'start', 'end'));
+    }
+
+    public function downloadReport(Request $request)
+    {
+        $date = $request->input('date');
+        $start = $request->input('start_time');
+        $end = $request->input('end_time');
+
+        $query = DB::table('attendances')
+            ->join('students', 'attendances.student_id', '=', 'students.id')
+            ->select('students.name', 'attendances.date', 'attendances.created_at')
+            ->where('attendances.user_id', auth()->id()) 
+            ->orderBy('attendances.created_at', 'desc');
+
+        if ($date) {
+            $query->whereDate('attendances.created_at', $date);
+        }
+
+        if ($start && $end) {
+            $query->whereTime('attendances.created_at', '>=', $start)
+                ->whereTime('attendances.created_at', '<=', $end);
+        }
+
+        $records = $query->get();
+
+        $response = new StreamedResponse(function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Name', 'Date', 'Time']);
+
+            foreach ($records as $row) {
+                fputcsv($handle, [$row->name, $row->date, $row->created_at]);
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv');
+        $response->headers->set('Content-Disposition', 'attachment; filename="attendance_report.csv"');
+
+        return $response;
+    }
 
 }

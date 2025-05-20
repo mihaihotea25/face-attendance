@@ -23,5 +23,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/attendance/start', [AttendanceController::class, 'start'])->name('attendance.start');
     Route::post('/attendance/recognize', [AttendanceController::class, 'recognize'])->name('attendance.recognize');
+
+    Route::get('/attendance/reports', [AttendanceController::class, 'showReports'])->name('attendance.reports');
+    Route::get('/attendance/reports/download', [AttendanceController::class, 'downloadReport'])->name('attendance.reports.download');
+
 });
 

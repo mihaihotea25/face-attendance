@@ -11,9 +11,9 @@
             Start Attendance
         </a>
 
-        <a href="#"
-           class="bg-gray-400 text-white font-semibold px-6 py-3 rounded-lg text-center hover:bg-gray-500 cursor-not-allowed">
-            Attendance Reports (coming soon)
+        <a href="{{ route('attendance.reports') }}"
+           class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg text-center hover:bg-blue-700">
+            Attendance Reports
         </a>
     </div>
 @endsection
