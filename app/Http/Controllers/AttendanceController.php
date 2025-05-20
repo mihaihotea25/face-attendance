@@ -59,6 +59,7 @@ class AttendanceController extends Controller
                 Attendance::create([
                     'student_id' => $studentId,
                     'date' => $now->toDateString(),
+                    'user_id' => auth()->id(),
                     'created_at' => $now,
                     'updated_at' => $now
                 ]);
